@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.db
+
+# Virtual environment
+.venv/
+venv/
+
+# IDE
+.idea/
+
+# Runtime / quarantine contents
+quarantine/*
+!quarantine/.gitkeep
+
+# OS
+Thumbs.db
+.DS_Store

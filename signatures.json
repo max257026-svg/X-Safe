@@ -1,0 +1,294 @@
+{
+  "_description": "X-Safe — 病毒签名数据库。包含已知恶意软件哈希、可疑行为模式、启发式规则",
+
+  "hash_signatures": [
+    {
+      "md5": "44d88612fea8a8f36de82e1278abb02f",
+      "name": "EICAR 测试病毒",
+      "severity": "low",
+      "type": "test",
+      "description": "EICAR 标准反病毒测试文件 — 无害测试签名"
+    },
+    {
+      "sha256": "275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f",
+      "name": "EICAR 测试病毒 (SHA256)",
+      "severity": "low",
+      "type": "test",
+      "description": "EICAR 测试文件的 SHA256 哈希"
+    },
+    {
+      "md5": "69630e4574ec6798239b091cda43dca0",
+      "name": "EICAR 测试病毒 (Alternative)",
+      "severity": "low",
+      "type": "test",
+      "description": "EICAR 测试文件的另一种形式"
+    },
+    {
+      "md5": "d41d8cd98f00b204e9800998ecf8427e",
+      "name": "恶意软件: Trojan.GenericKD.12345",
+      "severity": "high",
+      "type": "trojan",
+      "description": "通用木马变种，窃取用户敏感信息"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "name": "恶意软件: Ransomware.WannaCry",
+      "severity": "critical",
+      "type": "ransomware",
+      "description": "WannaCry 勒索软件变种"
+    },
+    {
+      "md5": "84c82835a5d21bbcf75a61706d8ab549",
+      "name": "恶意软件: Backdoor.RemoteAccess",
+      "severity": "critical",
+      "type": "backdoor",
+      "description": "远程访问后门，允许攻击者完全控制系统"
+    },
+    {
+      "md5": "ed01ebfbc9eb5bbea545af4d01bf5f10",
+      "name": "恶意软件: Worm.Conficker",
+      "severity": "high",
+      "type": "worm",
+      "description": "Conficker 蠕虫变种"
+    },
+    {
+      "sha256": "5a77d0b1e8a5e1298b0d0b4e0c5e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e",
+      "name": "恶意软件: Spyware.KeyLogger.Gen",
+      "severity": "high",
+      "type": "spyware",
+      "description": "键盘记录器变种"
+    }
+  ],
+
+  "pattern_signatures": [
+    {
+      "name": "PHP Webshell — 一句话木马",
+      "severity": "critical",
+      "pattern": "<\\?php[\\s\\S]*?@?\\s*(eval|assert|system|exec|shell_exec|passthru|popen|proc_open)\\s*\\(\\s*\\$_(GET|POST|REQUEST|COOKIE|SERVER)\\[",
+      "type": "webshell",
+      "description": "PHP 一句话木马，攻击者可通过 HTTP 参数执行任意命令"
+    },
+    {
+      "name": "ASP Webshell",
+      "severity": "critical",
+      "pattern": "<%\\s*(eval|execute|ExecuteGlobal)\\s*\\(\\s*(request|Request)\\(",
+      "type": "webshell",
+      "description": "ASP/ASPX Webshell 检测"
+    },
+    {
+      "name": "PowerShell 下载执行",
+      "severity": "high",
+      "pattern": "(IEX|Invoke-Expression|Invoke-WebRequest|Net\\.WebClient).*(DownloadString|DownloadFile|DownloadData)",
+      "type": "dropper",
+      "file_types": [".ps1", ".bat", ".cmd", ".vbs", ".js", ".htm", ".html", ".hta"],
+      "description": "PowerShell 远程下载并执行恶意代码"
+    },
+    {
+      "name": "PowerShell 编码命令",
+      "severity": "high",
+      "pattern": "-e(nc(odedcommand)?)?\\s+[A-Za-z0-9+/=]{100,}",
+      "type": "obfuscation",
+      "description": "PowerShell Base64 编码命令执行"
+    },
+    {
+      "name": "注册表持久化",
+      "severity": "high",
+      "pattern": "(HKLM|HKCU|HKEY_LOCAL_MACHINE|HKEY_CURRENT_USER)\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\(Run|RunOnce|RunServices)",
+      "type": "persistence",
+      "file_types": [".bat", ".cmd", ".ps1", ".vbs", ".js", ".reg", ".inf"],
+      "description": "Windows 注册表持久化机制"
+    },
+    {
+      "name": "计划任务持久化",
+      "severity": "medium",
+      "pattern": "schtasks\\s*/create.*(/sc\\s+(onstart|onlogon|daily|hourly)|/tn\\s+\\w+)",
+      "type": "persistence",
+      "description": "通过计划任务实现持久化"
+    },
+    {
+      "name": "WMI 持久化",
+      "severity": "high",
+      "pattern": "__EventFilter|CommandLineEventConsumer|ActiveScriptEventConsumer|__FilterToConsumerBinding",
+      "type": "persistence",
+      "file_types": [".ps1", ".vbs", ".js", ".bat", ".cmd", ".mof"],
+      "description": "WMI 事件订阅持久化"
+    },
+    {
+      "name": "进程注入技术",
+      "severity": "critical",
+      "pattern": "(VirtualAllocEx|WriteProcessMemory|CreateRemoteThread|NtCreateThreadEx|QueueUserAPC|SetWindowsHookEx)",
+      "type": "injection",
+      "file_types": [".exe", ".dll", ".sys", ".bin", ".ps1", ".bat", ".vbs", ".vbe", ".js", ".jse", ".c", ".cpp", ".h", ".hpp", ".cs"],
+      "description": "进程注入 API 调用"
+    },
+    {
+      "name": "凭据窃取",
+      "severity": "critical",
+      "pattern": "(mimikatz|sekurlsa::|lsadump::|kerberos::|procdump.*lsass|comsvcs\\.dll.*MiniDump)",
+      "type": "credential_theft",
+      "file_types": [".exe", ".dll", ".ps1", ".bat", ".vbs", ".js", ".c", ".cpp", ".h"],
+      "description": "凭据窃取工具/命令"
+    },
+    {
+      "name": "勒索软件加密行为",
+      "severity": "critical",
+      "pattern": "(vssadmin\\s+delete\\s+shadows|wbadmin\\s+delete\\s+catalog|bcdedit\\s+/set.*bootstatuspolicy|cipher\\s+/w:)",
+      "type": "ransomware",
+      "file_types": [".exe", ".dll", ".ps1", ".bat", ".cmd", ".vbs", ".js"],
+      "description": "勒索软件典型行为：删除卷影副本、禁用恢复"
+    },
+    {
+      "name": "反沙箱检测",
+      "severity": "medium",
+      "pattern": "(IsDebuggerPresent|CheckRemoteDebuggerPresent|NtQueryInformationProcess|GetTickCount.*sleep|rdtsc)",
+      "type": "evasion",
+      "file_types": [".exe", ".dll", ".sys", ".ps1", ".bat", ".vbs", ".c", ".cpp", ".h", ".hpp", ".cs"],
+      "description": "反调试/反沙箱检测技术"
+    },
+    {
+      "name": "Base64 编码混淆",
+      "severity": "low",
+      "pattern": "(FromBase64String|base64_decode|atob|btoa)\\s*\\(\\s*['\\\"][A-Za-z0-9+/=]{100,}['\\\"]",
+      "type": "obfuscation",
+      "description": "长 Base64 编码字符串 — 常见混淆手段"
+    }
+  ],
+
+  "string_signatures": [
+    {
+      "name": "恶意 VBA 宏 — AutoOpen",
+      "severity": "high",
+      "strings": [
+        "AutoOpen",
+        "Document_Open",
+        "Workbook_Open",
+        "Shell(",
+        "CreateObject(\"WScript.Shell\")",
+        "CreateObject(\"MSXML2.XMLHTTP\")"
+      ],
+      "min_matches": 2,
+      "type": "macro_virus",
+      "description": "Office 宏病毒"
+    },
+    {
+      "name": "Linux 后门 Shell",
+      "severity": "critical",
+      "strings": [
+        "nc -e /bin/sh",
+        "nc -e /bin/bash",
+        "bash -i >& /dev/tcp/",
+        "python -c 'import socket",
+        "perl -e 'use Socket"
+      ],
+      "min_matches": 1,
+      "type": "backdoor",
+      "description": "反向 Shell / 后门"
+    },
+    {
+      "name": "批量文件加密脚本",
+      "severity": "high",
+      "strings": [
+        "encrypt",
+        "for file in",
+        ".encrypted",
+        "AES.MODE_CBC",
+        "ransom_note"
+      ],
+      "min_matches": 3,
+      "type": "ransomware",
+      "description": "Python 勒索软件脚本"
+    },
+    {
+      "name": "挖矿脚本特征",
+      "severity": "medium",
+      "strings": [
+        "stratum+tcp://",
+        "xmrig",
+        "mining",
+        "cpu-priority",
+        "cryptonight",
+        "donate-level"
+      ],
+      "min_matches": 2,
+      "type": "cryptominer",
+      "description": "加密货币挖矿恶意软件"
+    },
+    {
+      "name": "信息窃取脚本",
+      "severity": "high",
+      "strings": [
+        "chromium",
+        "sqlite3",
+        "Login Data",
+        "cookies",
+        "autofill",
+        "send to webhook",
+        "discord webhook"
+      ],
+      "min_matches": 3,
+      "type": "infostealer",
+      "description": "浏览器凭据窃取工具"
+    },
+    {
+      "name": "X-Safe 主动防御自测样本",
+      "severity": "medium",
+      "strings": [
+        "X-SAFE-SELF-TEST-SUSPICIOUS-PROGRAM"
+      ],
+      "min_matches": 1,
+      "type": "self_test",
+      "description": "X-Safe 主动防御功能自测标记 — 仅用于测试右下角弹窗，文件本身无害"
+    }
+  ],
+
+  "yara_rules": [
+    {
+      "name": "多阶段下载器",
+      "severity": "high",
+      "file_types": [".ps1", ".bat", ".cmd", ".vbs", ".js", ".hta"],
+      "strings": {
+        "$download": "DownloadString",
+        "$execute": "Invoke-Expression",
+        "$hidden": "WindowStyle Hidden",
+        "$bypass": "ExecutionPolicy Bypass"
+      },
+      "condition": "($download and $execute) or ($hidden and $bypass)"
+    },
+    {
+      "name": "进程注入 + 持久化组合",
+      "severity": "critical",
+      "file_types": [".exe", ".dll", ".sys", ".ps1", ".bat", ".vbs", ".js", ".c", ".cpp", ".h"],
+      "strings": {
+        "$inject": "CreateRemoteThread",
+        "$persist": "CurrentVersion\\\\Run",
+        "$alloc": "VirtualAllocEx"
+      },
+      "condition": "($inject or $alloc) and $persist"
+    }
+  ],
+
+  "dangerous_extensions": [
+    ".exe", ".dll", ".sys", ".bat", ".cmd", ".ps1",
+    ".vbs", ".vbe", ".js", ".jse", ".wsf", ".wsh",
+    ".hta", ".scr", ".pif", ".cpl", ".msi", ".msp",
+    ".com", ".gadget", ".reg"
+  ],
+
+  "heuristic_rules": [
+    {
+      "name": "高熵值检测",
+      "threshold": 7.2,
+      "description": "熵值超过7.2可能表示加密/混淆"
+    },
+    {
+      "name": "双扩展名检测",
+      "description": "检测 .pdf.exe 等伪装扩展名"
+    },
+    {
+      "name": "脚本混淆检测",
+      "min_entropy": 5.5,
+      "min_length": 500,
+      "description": "短高熵脚本可能是混淆的恶意代码"
+    }
+  ]
+}
