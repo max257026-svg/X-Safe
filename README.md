@@ -31,7 +31,7 @@
 
 ### 方式一：直接下载预编译 exe（推荐）
 
-从 [Releases](https://github.com/ZYWind-S/X-Safe-Security-Center/releases) 页面下载最新版本：
+从 [Releases](https://github.com/max257026-svg/X-Safe/releases) 页面下载最新版本：
 - 解压 `XSafe_v*.zip`
 - 双击 `XSafe.exe` 即可运行
 - 数据目录：`%TEMP%\XSafe\`
@@ -40,8 +40,8 @@
 
 ```bash
 # 克隆项目
-git clone https://github.com/ZYWind-S/X-Safe-Security-Center.git
-cd X-Safe-Security-Center
+git clone https://github.com/max257026-svg/X-Safe.git
+cd X-Safe
 
 # 创建虚拟环境
 python -m venv .venv
@@ -71,7 +71,7 @@ pyinstaller main.spec --noconfirm --clean
 ## 📂 项目结构
 
 ```
-X-Safe-Security-Center/
+X-Safe/
 ├── main.py                  # GUI 主程序（tkinter）
 ├── main.spec                # PyInstaller 打包配置
 ├── requirements.txt         # 依赖清单
@@ -272,8 +272,8 @@ set XSAFE_AUTO_SCAN=1 && start "" "dist\XSafe\XSafe.exe"
 
 ## 📞 联系方式
 
-- GitHub Issues: https://github.com/ZYWind-S/X-Safe-Security-Center/issues
-- 项目主页: https://github.com/ZYWind-S/X-Safe-Security-Center
+- GitHub Issues: https://github.com/max257026-svg/X-Safe/issues
+- 项目主页: https://github.com/max257026-svg/X-Safe
 
 ---
 
