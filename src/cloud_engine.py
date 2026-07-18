@@ -220,9 +220,9 @@ class Cloud360Engine:
 class CloudScanner:
     """云查杀引擎管理器 — 协调多个云引擎"""
 
-    def __init__(self, config_path: str = ""):
+    def __init__(self, config_path: str = "", cache_path: str = ""):
         self.config_path = Path(config_path) if config_path else Path(__file__).parent / "cloud_config.json"
-        self._cache = CloudScanCache(str(Path(__file__).parent / "cloud_cache.json"))
+        self._cache = CloudScanCache(cache_path if cache_path else str(Path(__file__).parent / "cloud_cache.json"))
         self._engines: list = []
         self._lock = threading.Lock()
         self._load_config()

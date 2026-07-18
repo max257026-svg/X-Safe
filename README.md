@@ -1,130 +1,280 @@
-# X-Safe
+# X-Safe 安全中心
 
-> 非常高级的杀毒软件 🛡️
+> 一款面向个人用户与中小团队的轻量化主动防御型安全软件
+> 由 **竹影清风** 独立设计开发，**新启年工作室**（NewEra Studio）联合出品
 
-X-Safe 是一款基于 Python 的轻量级主动防御杀毒软件，集**签名查杀、启发式分析、AI 自学习、云查杀、实时防护、进程行为监控、隔离区**于一体，并带有系统托盘与深浅双主题图形界面。
-
----
-
-## ✨ 功能特性
-
-- **多引擎扫描**
-  - 签名查杀（`signatures.json` 特征库）
-  - 启发式规则 + 熵（entropy）分析，识别加壳 / 混淆的可疑文件
-  - 按威胁等级分级：`SAFE` / `SUSPICIOUS` / `HIGH_RISK` / `MALICIOUS`
-- **AI 自学习引擎**（`ai_engine.py`）
-  - 贝叶斯置信度评分，对未知文件给出风险概率
-  - 用户每次「确认威胁 / 标记误报 / 标记安全」的反馈都会**训练本地模型**，误报率持续下降
-  - 上下文感知：文件位置、来源影响最终判定
-- **云查杀**（`cloud_engine.py`）
-  - 本地特征库 + 云端缓存（`cloud_cache.json` / `cloud_config.json`）协同判定
-- **实时防护**（`monitor.py`，基于 `watchdog`）
-  - 监控指定目录的新增 / 修改文件，命中即触发右下角弹窗告警
-- **进程行为监控**（`process_monitor.py`）
-  - 检测从可疑目录启动的程序、危险命令行参数与高危行为（`psutil` 可选增强）
-- **隔离区（Quarantine）**
-  - 命中威胁的文件可移入隔离区，避免误删重要文件
-- **系统托盘 + 弹窗通知**（`toast_notification.py`，基于 `pystray`）
-  - 轻量、非侵入的威胁提示
-- **深浅双主题 GUI**（`main.py`，基于 `tkinter`）
-  - GitHub Light 风格浅色主题 + 原配深色主题，可一键切换
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/)
+[![Platform: Windows](https://img.shields.io/badge/platform-Windows-lightgrey.svg)](#)
+[![Version 1.0](https://img.shields.io/badge/version-1.0-green.svg)](#)
 
 ---
 
-## 📂 目录结构
+## 📖 项目简介
 
-```
-X-Safe/
-├── main.py                    # 主程序 / GUI 入口（深浅双主题）
-├── engine.py                  # 核心扫描引擎（签名 + 启发式 + 熵分析）
-├── ai_engine.py               # AI 自学习引擎（贝叶斯置信度 + 反馈学习）
-├── cloud_engine.py            # 云查杀引擎
-├── monitor.py                 # 实时文件监控（watchdog）
-├── process_monitor.py         # 进程行为监控
-├── toast_notification.py      # 系统托盘 / 弹窗通知
-├── signatures.json            # 本地特征库
-├── cloud_config.json          # 云查杀配置
-├── cloud_cache.json           # 云查杀结果缓存
-├── theme_config.json          # 主题偏好
-├── xsafe.ico                  # 程序图标
-├── quarantine/                # 隔离区（运行时生成）
-├── requirements.txt           # 依赖
-├── XSafe_ActiveDefense_Test.bat  # 主动防御自测脚本（无害）
-└── test_webshell.php          # WebShell 测试样本
-```
+**X-Safe 安全中心** 是面向个人用户与中小团队的轻量化主动防御型安全软件，以「先弹窗、再处置」为核心思路，把**特征查杀、AI 行为评分、云端联动、系统敏感点监控**整合在同一个简洁的中文控制台中，让普通用户也能拥有接近企业级 EDR 的可见性与响应能力。
 
-> 注：`.venv/`、`.idea/`、`__pycache__/` 与运行时数据库、隔离区内容已通过 `.gitignore` 排除，不会进入版本库。
+### ✨ 核心特性
+
+- 🔍 **三引擎联动**：特征引擎 + AI 自学习 + 云端查杀，按权重融合给出最终风险等级
+- 🛡️ **主动防御**：解压/下载/注册表/引导区/进程行为实时监控
+- 🔁 **系统自检**：隔离区完整性 + 引导区 + 注册表基线巡检，一键确认防护体系健康度
+- 💀 **勒索恢复**：WannaCry / EternalBlue 痕迹检测 + 卷影副本恢复
+- 🪟 **屏幕右下方 ThreatToast 弹窗**：累积摘要弹窗（狂涌 500+ 威胁也只弹 1 个）+ 单条带「删除 / 隔离 / 自检 / 忽略」按钮
+- 🎯 **自保护白名单**：程序自身 + _internal 目录默认豁免，避免 PyInstaller 依赖被误报
+- 🌓 **浅 / 深双主题**：一键切换，通过 os.execv 重启进程换肤
+- 📂 **数据本地化**：所有用户数据落到 `%TEMP%\XSafe\`，跨会话存活
 
 ---
 
-## 🚀 安装
+## 🚀 快速开始
 
-要求 **Python 3.8+**，推荐在 **Windows** 上运行（托盘与弹窗依赖 Windows 环境）。
+### 方式一：直接下载预编译 exe（推荐）
+
+从 [Releases](https://github.com/ZYWind-S/X-Safe-Security-Center/releases) 页面下载最新版本：
+- 解压 `XSafe_v*.zip`
+- 双击 `XSafe.exe` 即可运行
+- 数据目录：`%TEMP%\XSafe\`
+
+### 方式二：从源码运行
 
 ```bash
-# 1. 克隆仓库
-git clone https://github.com/max257026-svg/X-Safe.git
-cd X-Safe
+# 克隆项目
+git clone https://github.com/ZYWind-S/X-Safe-Security-Center.git
+cd X-Safe-Security-Center
 
-# 2. 创建并激活虚拟环境（可选但推荐）
+# 创建虚拟环境
 python -m venv .venv
-.venv\Scripts\activate
+.venv\Scripts\activate  # Windows
 
-# 3. 安装依赖
+# 安装依赖
 pip install -r requirements.txt
-```
 
-`requirements.txt`：
-
-| 依赖 | 作用 |
-| --- | --- |
-| `watchdog` | 实时文件监控 |
-| `pystray` | 系统托盘图标 |
-| `pillow` | 图标 / 图像处理 |
-| `psutil`（可选） | 增强进程行为监控 |
-| `pywin32`（可选） | Windows 系统级 API，增强检测能力 |
-
----
-
-## 🖥️ 使用
-
-```bash
+# 运行
 python main.py
 ```
 
-- 在图形界面中选择目录 / 文件进行扫描
-- 最小化后常驻系统托盘，实时防护在后台运行
-- 右键托盘图标可进行「主动防御自测」等操作
-- 主题可在界面内切换浅色 / 深色
+### 方式三：从源码打包成 exe
 
-### 主动防御自测
+```bash
+# 安装 PyInstaller
+pip install pyinstaller
 
-双击 `XSafe_ActiveDefense_Test.bat`（**完全无害**），或将它复制到 `Downloads` 目录，X-Safe 实时防护会扫描并弹出右下角告警，用于验证主动防御是否生效。
+# 一键打包（生成 dist\XSafe\XSafe.exe）
+pyinstaller main.spec --noconfirm --clean
+```
 
----
-
-## 🧪 测试样本
-
-仓库附带几个用于验证检测能力的样本：
-
-- `test_webshell.php` —— WebShell 测试样本
-- `XSafe_ActiveDefense_Test.bat` —— 主动防御自测脚本（含触发标记串）
-
-> ⚠️ 原压缩包中的 `eicar_test.txt`（EICAR 标准杀软测试串）**未纳入本仓库**：其字面内容会被 Windows Defender 等杀软在写入 / 检出时直接隔离，会导致 Windows 用户克隆后文件丢失。如需本地测试，请自行从 [EICAR 官网](https://www.eicar.org/download-anti-malware-testfile/) 下载。
+> ⚠️ **PyInstaller 缓存陷阱**：每次改完代码后必须 `rm -rf build/ dist/`，否则可能用旧代码打包。
 
 ---
 
-## ⚙️ 配置文件
+## 📂 项目结构
 
-| 文件 | 说明 |
-| --- | --- |
-| `signatures.json` | 本地恶意特征库，可手动扩充 |
-| `cloud_config.json` | 云查杀开关 / 地址等配置 |
-| `cloud_cache.json` | 云查杀结果本地缓存 |
-| `theme_config.json` | 界面主题偏好（light / dark） |
+```
+X-Safe-Security-Center/
+├── main.py                  # GUI 主程序（tkinter）
+├── main.spec                # PyInstaller 打包配置
+├── requirements.txt         # 依赖清单
+├── xsafe.ico                # 应用图标
+├── LICENSE                  # MIT 许可证
+├── README.md                # 本文件
+├── .gitignore               # Git 忽略规则
+│
+├── src/                     # 核心模块
+│   ├── engine.py            # 扫描引擎 + ScanResult + 隔离区
+│   ├── ai_engine.py         # AI 自学习引擎
+│   ├── cloud_engine.py      # 云端查杀（360云 + VirusTotal）
+│   ├── monitor.py           # 文件系统实时监控
+│   ├── registry_monitor.py  # 注册表 HOOK 监控
+│   ├── process_monitor.py   # 进程行为监控
+│   ├── whitelist.py         # 白名单引擎 + 自保护
+│   ├── recovery.py          # 勒索恢复 + 永恒之蓝检测
+│   ├── self_check.py        # 主动防御自检
+│   ├── boot_guard.py        # 引导区（MBR/VBR）保护
+│   └── toast_notification.py# ThreatToast 弹窗系统
+│
+├── data/                    # 数据/资源文件
+│   ├── signatures.json      # 病毒签名数据库
+│   ├── theme_config.json    # 主题配置
+│   ├── cloud_config.json    # 云查杀配置
+│   ├── cloud_cache.json     # 云查杀缓存
+│   ├── ai_learning.db       # AI 学习数据库种子
+│   ├── hosts_backup.txt     # hosts 文件备份
+│   └── quarantine/          # 隔离区（空目录）
+│
+├── docs/                    # 项目文档
+│   ├── architecture.md      # 架构设计
+│   ├── build.md             # 打包说明
+│   └── screenshots/         # 截图
+│
+├── tests/                   # 单元测试
+│   └── test_engine.py
+│
+└── .github/
+    └── workflows/
+        └── build.yml        # CI: 自动打包 Windows exe
+```
 
 ---
 
-## ⚠️ 免责声明
+## 🏗️ 技术架构
 
-X-Safe 为学习与演示用途的轻量级防护工具，**不能替代专业商业杀软**。请勿将其用于生产环境的关键安全防护。
+### 三引擎联动
+
+```
+                   ┌──────────────┐
+                   │  特征引擎     │  哈希签名 + 模式匹配 + YARA 风格
+                   └──────┬───────┘
+                          │ ConfidenceScore
+                          ▼
+┌──────────┐      ┌──────────────┐      ┌──────────┐
+│ 扫描器    │ ───▶ │  AI 引擎     │ ───▶ │  融合评分  │ ──▶ 最终判定
+└──────────┘      └──────────────┘      └──────────┘
+                          │                      ▲
+                          │                      │
+                   ┌──────┴───────┐              │
+                   │  云端引擎     │ ─────────────┘
+                   │  (可选)      │  360云 + VirusTotal
+                   └──────────────┘
+```
+
+### 主动防御体系
+
+- **文件系统监控**：watchdog（实时）+ PollingObserver（系统目录兜底）
+- **注册表监控**：Run / IFEO / Winlogon Shell / AppInit_DLLs / Userinit 关键项
+- **引导区保护**：MBR / VBR 哈希快照，发现篡改立即告警
+- **进程行为**：异常父子进程、DLL 注入、批量加密写文件实时拦截
+- **系统敏感文件**：hosts、计划任务、启动项、卷影副本、SAM
+
+### ThreatToast 弹窗系统
+
+- 屏幕右下方 420x340 Toplevel 弹窗（无边框，overrideredirect）
+- **累积摘要弹窗**（手动扫描）：狂涌 500+ 威胁时每 1.5s 弹 1 个「🚨 扫描发现 N 个威胁」
+- **单条带按钮**（实时监控）：「🗑 删除 / 🔍 自检 / ✕ 忽略」
+
+详见 [docs/architecture.md](docs/architecture.md)
+
+---
+
+## 🎮 使用指南
+
+### 1. 快速扫描
+点击「⚡ 快速扫描」按钮，自动扫描关键目录（下载/桌面/文档/临时文件）。
+
+### 2. 高级查杀（三引擎联动）
+点击「🔥 高级查杀」按钮，对全盘进行深度扫描，调用本地+AI+云端三个引擎。
+
+### 3. 自定义扫描
+点击「📁 自定义扫描」按钮，选择任意文件夹进行扫描。
+
+### 4. 实时防护
+实时防护页面有 6 个子模块复选框：
+- ✅ 标准实时监控
+- ✅ 解压/下载监控
+- ✅ 注册表监控
+- ✅ 引导区监控
+- ✅ 系统敏感文件监控
+- ✅ 应用异常行为监控
+
+建议全部开启以获得最佳防护效果。
+
+### 5. 自检
+点击「自检」按钮，一键确认防护体系健康度：
+- 隔离区完整性
+- 引导区基线对比
+- 注册表关键项巡检
+- 三引擎联动测试
+
+### 6. 勒索恢复
+在「逆向恢复」页面，针对常见勒索软件家族（WannaCry / EternalBlue）提供针对性恢复工具。
+
+---
+
+## 🛠️ 开发说明
+
+### 数据目录（运行时自动创建）
+
+| 平台 | 路径 |
+|------|------|
+| Windows (exe 模式) | `%TEMP%\XSafe\` （默认 `C:\Users\<user>\AppData\Local\Temp\XSafe\`）|
+| Windows (源码模式) | `<项目根>\.userdata\` |
+
+数据迁移：第一次启动时自动从 `%APPDATA%\XSafe\`（旧版本）迁移到 `%TEMP%\XSafe\`。
+
+### 添加新病毒签名
+
+编辑 `data/signatures.json`：
+
+```json
+{
+  "hash_signatures": [
+    {
+      "md5": "你的病毒MD5",
+      "sha256": "你的病毒SHA256",
+      "name": "病毒名",
+      "severity": "high",
+      "type": "trojan",
+      "description": "描述"
+    }
+  ],
+  "pattern_signatures": [
+    {
+      "name": "WebShell 检测",
+      "pattern": "eval\\s*\\(\\s*\\$_",
+      "type": "regex",
+      "severity": "critical",
+      "description": "PHP 一句话木马"
+    }
+  ]
+}
+```
+
+---
+
+## 🧪 测试
+
+```bash
+# 单元测试
+pytest tests/
+
+# 主动防御自测（启动后 3 秒自动触发）
+set XSAFE_AUTO_SCAN=1 && start "" "dist\XSafe\XSafe.exe"
+```
+
+---
+
+## 🤝 贡献
+
+欢迎通过以下方式贡献：
+- 🐛 提交 Issue 报告 Bug
+- 💡 提交 Pull Request 改进代码
+- 📋 完善特征库
+- 🌐 多语言支持
+- 📖 改进文档
+
+---
+
+## 📜 许可证
+
+本项目采用 **MIT 许可证** — 详见 [LICENSE](LICENSE)
+
+---
+
+## 🙏 鸣谢
+
+| 角色 | 姓名 |
+|------|------|
+| 制作 | 竹影清风（ZYWind-S） |
+| 出品 | 新启年工作室（NewEra Studio） |
+| 鸣谢 | WinDF（室长） / 老干白 / 小青墨 / 不言而喻 |
+
+---
+
+## 📞 联系方式
+
+- GitHub Issues: https://github.com/ZYWind-S/X-Safe-Security-Center/issues
+- 项目主页: https://github.com/ZYWind-S/X-Safe-Security-Center
+
+---
+
+**X-Safe 安全中心** — 让每一台电脑都拥有企业级主动防御

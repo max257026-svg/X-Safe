@@ -1,0 +1,8 @@
+{
+  "_comment": "Cloud scan configuration. Replace with your own API keys if needed.",
+  "virustotal_api_key": "",
+  "use_360_cloud": true,
+  "use_virustotal": true,
+  "cache_ttl_seconds": 86400,
+  "request_timeout": 10
+}

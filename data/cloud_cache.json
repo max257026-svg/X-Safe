@@ -1,0 +1,4 @@
+{
+  "_comment": "Cloud scan result cache. Populated at runtime in %TEMP%\\XSafe\\",
+  "cache": {}
+}

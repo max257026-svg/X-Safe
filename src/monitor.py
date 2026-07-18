@@ -12,12 +12,14 @@ from typing import Callable, Optional
 # watchdog may not be installed — graceful fallback
 try:
     from watchdog.observers import Observer
+    from watchdog.observers.polling import PollingObserver
     from watchdog.events import FileSystemEventHandler
 
     WATCHDOG_AVAILABLE = True
 except ImportError:
     WATCHDOG_AVAILABLE = False
     Observer = None
+    PollingObserver = None
     FileSystemEventHandler = object
 
 # 进程监控
@@ -188,7 +190,7 @@ class RealTimeMonitor:
         self._running = True
 
     def stop(self):
-        """停止实时监控"""
+        """停止实时监控（短 join 超时，避免阻塞 UI）"""
         if not self._running:
             return
 
@@ -201,8 +203,11 @@ class RealTimeMonitor:
 
         # 停止文件监控
         if self._observer:
-            self._observer.stop()
-            self._observer.join(timeout=5)
+            try:
+                self._observer.stop()
+                self._observer.join(timeout=1.0)
+            except Exception:
+                pass
             self._observer = None
 
         self._running = False
@@ -298,3 +303,185 @@ class RealTimeMonitor:
 
     def get_monitored_paths(self) -> list[str]:
         return list(self._monitored_paths)
+
+
+# ============================================================
+# 系统敏感文件防护 (System Guard)
+# 持续监视系统敏感目标 (hosts 文件、启动目录、专用测试目录)，
+# 一旦有文件被新建 / 修改 / 移动，立即通过回调上报，
+# 由主程序执行「隔离可疑程序 + 右下角弹窗」。
+# 该监控不依赖签名命中 —— 敏感位置出现任何程序即视为可疑。
+# ============================================================
+class SensitiveFileMonitor:
+    """系统敏感文件监控器 — 基于 watchdog"""
+
+    WATCHDOG_AVAILABLE = WATCHDOG_AVAILABLE
+
+    # hosts 文件 (域名解析劫持的高危目标)
+    HOSTS_FILE = r"C:\Windows\System32\drivers\etc\hosts"
+    # 可写测试目录 (供自测 bat 安全触发，无需管理员权限)
+    TEST_DIR = os.path.join(os.path.expanduser("~"), "XSafe_SystemGuard_Test")
+
+    @staticmethod
+    def resolve_targets() -> list[str]:
+        """解析实际存在的敏感监控目标"""
+        targets: list[str] = []
+
+        # 1) hosts 文件
+        if os.path.exists(SensitiveFileMonitor.HOSTS_FILE):
+            targets.append(SensitiveFileMonitor.HOSTS_FILE)
+
+        # 2) 启动目录 (登录自启动持久化)
+        startup_candidates = [
+            os.path.join(os.environ.get("APPDATA", ""),
+                         "Microsoft", "Windows", "Start Menu",
+                         "Programs", "Startup"),
+            r"C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup",
+        ]
+        for s in startup_candidates:
+            if s and os.path.isdir(s):
+                targets.append(s)
+
+        # 3) 测试目录 (即使尚不存在也加入，由调用方负责创建)
+        targets.append(SensitiveFileMonitor.TEST_DIR)
+        return targets
+
+    def __init__(self):
+        self._observer: Optional[Observer] = None if WATCHDOG_AVAILABLE else None
+        self._running = False
+        self._callback: Optional[Callable] = None
+        self._lock = threading.Lock()
+
+    @property
+    def running(self) -> bool:
+        return self._running
+
+    def start(self, targets: list[str], callback: Callable[[str, str], None]):
+        """启动敏感文件监控
+
+        Args:
+            targets: 监控目标 (文件或目录)
+            callback: (filepath, event_type) -> None
+        """
+        if not WATCHDOG_AVAILABLE:
+            raise RuntimeError("watchdog 库未安装，无法启动系统敏感文件防护")
+        if self._running:
+            return
+
+        self._callback = callback
+
+        # 系统敏感目录（C:\Windows\System32\drivers\etc 等）权限高，
+        # native ReadDirectoryChangesW 经常卡住/失败，必须用 PollingObserver 兜底
+        def _is_system_path(p: str) -> bool:
+            try:
+                abs_p = os.path.abspath(p).lower()
+                sys_root = os.environ.get("SystemRoot", r"C:\Windows").lower()
+                return abs_p.startswith(sys_root)
+            except Exception:
+                return False
+
+        ObserverCls = PollingObserver if PollingObserver is not None else Observer
+        self._observer = ObserverCls()
+
+        for t in targets:
+            try:
+                t = os.path.abspath(t)
+                if os.path.isfile(t):
+                    # 单文件：监视其父目录，仅当事件命中该文件时才上报
+                    parent = os.path.dirname(t)
+                    if not os.path.isdir(parent):
+                        continue
+                    # 受限系统路径里的单文件，强制 polling
+                    sub_cls = PollingObserver if (PollingObserver is not None and _is_system_path(parent)) else ObserverCls
+                    if sub_cls is not self._observer.__class__:
+                        # 同一个 observer 只能用一种实现，跳过冲突的路径
+                        continue
+                    handler = _SensitiveHandler(
+                        callback=self._on_event, only_path=t)
+                    self._observer.schedule(handler, parent, recursive=False)
+                elif os.path.isdir(t):
+                    if _is_system_path(t) and PollingObserver is not None and not isinstance(self._observer, PollingObserver):
+                        # 同一 observer 只能用一种 backend，跳过系统路径
+                        continue
+                    handler = _SensitiveHandler(
+                        callback=self._on_event, only_path=None)
+                    self._observer.schedule(handler, t, recursive=True)
+            except Exception as e:
+                # 单个目标 schedule 失败不影响其他目标
+                import logging
+                logging.getLogger("xsafe.sensitive").warning(
+                    f"敏感路径 schedule 失败: {t} - {e}")
+
+        self._observer.start()
+        self._running = True
+
+    def stop(self):
+        if not self._running:
+            return
+        if self._observer:
+            try:
+                self._observer.stop()
+                self._observer.join(timeout=1.0)
+            except Exception:
+                pass
+            self._observer = None
+        self._running = False
+
+    def _on_event(self, filepath: str, event_type: str):
+        if self._callback:
+            try:
+                self._callback(filepath, event_type)
+            except Exception:
+                pass
+
+
+class _SensitiveHandler(FileSystemEventHandler if WATCHDOG_AVAILABLE else object):
+    """敏感文件事件处理器 — 去重 + 过滤临时文件 + 可选单文件过滤"""
+
+    def __init__(self, callback: Callable[[str, str], None],
+                 only_path: Optional[str] = None):
+        if WATCHDOG_AVAILABLE:
+            super().__init__()
+        self._callback = callback
+        self._only_path = (os.path.normcase(os.path.abspath(only_path))
+                           if only_path else None)
+        self._debounce: dict[str, float] = {}
+        self._debounce_interval = 1.0
+
+    def _accept(self, filepath: str, event_type: str) -> bool:
+        # 单文件过滤
+        if self._only_path and \
+                os.path.normcase(os.path.abspath(filepath)) != self._only_path:
+            return False
+
+        # 去重：1 秒内同一文件同一事件只处理一次
+        key = f"{filepath}:{event_type}"
+        now = time.time()
+        if self._debounce.get(key, 0) + self._debounce_interval > now:
+            return False
+        self._debounce[key] = now
+
+        # 跳过临时文件
+        name = os.path.basename(filepath).lower()
+        for pat in (".tmp", ".part", ".crdownload", "~$", ".bak"):
+            if pat in name:
+                return False
+        return True
+
+    def on_created(self, event):
+        if event.is_directory:
+            return
+        if self._accept(event.src_path, "created"):
+            self._callback(event.src_path, "created")
+
+    def on_modified(self, event):
+        if event.is_directory:
+            return
+        if self._accept(event.src_path, "modified"):
+            self._callback(event.src_path, "modified")
+
+    def on_moved(self, event):
+        if event.is_directory:
+            return
+        if self._accept(event.dest_path, "moved"):
+            self._callback(event.dest_path, "moved")

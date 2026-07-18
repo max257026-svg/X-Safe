@@ -1,19 +1,99 @@
-# Python
+# =====================================================
+# X-Safe 安全中心 — .gitignore
+# =====================================================
+
+# === Python 编译产物 ===
 __pycache__/
 *.py[cod]
-*.db
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 
-# Virtual environment
+# === 虚拟环境 ===
 .venv/
 venv/
+env/
+ENV/
+.env
 
-# IDE
+# === IDE / 编辑器 ===
 .idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+*.sublime-project
+*.sublime-workspace
 
-# Runtime / quarantine contents
+# === PyInstaller 输出 ===
+dist/
+*.spec.bak
+
+# === 运行时数据（用户产生，不入库） ===
+# 数据目录：%TEMP%\XSafe\（Windows） 或 ./.userdata/（源码）
+.userdata/
 quarantine/*
 !quarantine/.gitkeep
 
-# OS
-Thumbs.db
+# 运行时数据库 / 缓存
+ai_learning.db-journal
+ai_learning.db-shm
+ai_learning.db-wal
+hosts_backup.txt.bak
+
+# === 测试/调试文件 ===
+# 调试日志
+init_debug.log
+poll_debug.log
+*.log
+# 测试样本（不能入库，会被反病毒软件误报）
+eicar_test*
+test_webshell*
+test_malware*
+*.test.exe
+*.test.com
+# 测试 bat 脚本
+*_Test.bat
+# 测试 python 脚本
+_test_*.py
+test_*.py
+tools_*.py
+
+# === 旧版备份 ===
+*.7z
+*.rar
+*.zip
+!dist/
+
+# === 敏感信息（不能入库） ===
+# 用户配置 / API 密钥
+.env.local
+secrets.json
+api_keys.json
+cloud_config.local.json
+
+# === 系统临时文件 ===
+*.tmp
+*.bak
+*.swp
 .DS_Store
+
+# === 截图/演示（可选） ===
+docs/screenshots/*.tmp

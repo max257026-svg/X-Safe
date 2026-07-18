@@ -76,6 +76,7 @@ class ScanStats:
     errors: int = 0
     start_time: float = 0.0
     end_time: float = 0.0
+    current_file: str = ""  # 正在扫描的文件路径（ESET 风格：进度条显示当前文件）
 
     @property
     def elapsed_seconds(self) -> float:
@@ -530,8 +531,9 @@ class AntivirusScanner:
         "/system", "/system32",
     ]
 
-    def __init__(self, signature_db: SignatureDB):
+    def __init__(self, signature_db: SignatureDB, whitelist=None):
         self.sig_db = signature_db
+        self.whitelist = whitelist  # WhitelistEngine 实例 (可为 None)
         self.stats = ScanStats()
         self._results: list[ScanResult] = []
         self._cancel_flag = threading.Event()
@@ -593,6 +595,21 @@ class AntivirusScanner:
             result.details = "无法访问文件"
             return result
 
+        # ---- 白名单 / 信任区检查 (路径) ----
+        # 受信任文件直接判定安全，跳过后续所有检测，避免误报
+        if self.whitelist is not None and self.whitelist.is_trusted(str(path.absolute())):
+            result.threat_level = ThreatLevel.SAFE
+            result.detection_method = "白名单信任"
+            result.details = "该文件/路径已在信任区中，已跳过检测"
+            return result
+
+        # ---- 自保护：XSafe 自身 exe / _internal 运行时目录（防止自己杀自己） ----
+        if self.whitelist is not None and self.whitelist.is_self_protected(str(path.absolute())):
+            result.threat_level = ThreatLevel.SAFE
+            result.detection_method = "自保护"
+            result.details = "XSafe 自身组件，已自动加入白名单"
+            return result
+
         # 跳过超大文件
         if result.file_size > self.MAX_FILE_SIZE:
             result.threat_level = ThreatLevel.SAFE
@@ -608,6 +625,13 @@ class AntivirusScanner:
                 raise ScanCancelled(filepath)
             result.hash_md5 = md5
             result.hash_sha256 = sha256
+
+            # ---- 白名单 / 信任区检查 (哈希) ----
+            if self.whitelist is not None and self.whitelist.is_trusted(None, sha256=sha256):
+                result.threat_level = ThreatLevel.SAFE
+                result.detection_method = "白名单信任"
+                result.details = "该文件哈希已在信任区中，已跳过检测"
+                return result
 
             sig_match = self.sig_db.match_hash(md5=md5, sha256=sha256)
             if sig_match:
@@ -780,11 +804,14 @@ class AntivirusScanner:
         recursive: bool = True,
         extensions: Optional[list[str]] = None,
         _is_sub_scan: bool = False,
+        _streaming: bool = False,
     ) -> list[ScanResult]:
-        """扫描目录 — 先预统计文件总数，再边遍历边扫描，实时反馈 0→100% 进度
+        """扫描目录
 
         Args:
             _is_sub_scan: 内部参数，True 时不 reset（用于 full_scan 多盘符累积）
+            _streaming:  流式模式 — 跳过预统计，单次遍历边走边扫边更新 total_files。
+                           全盘扫描必须启用，否则预计数耗时数分钟期间 UI 永远显示 0。
         """
         if not _is_sub_scan:
             self.reset()
@@ -794,7 +821,12 @@ class AntivirusScanner:
         if not target_path.exists():
             return self._results
 
-        # 预统计文件总数 → 让进度条能从 0 连贯走到 100
+        if _streaming:
+            # ── 流式模式：单次遍历，发现文件即计入总数、立即扫描 ──
+            # 全盘扫描时避免"先花几分钟数文件再开始扫"导致 UI 长期显示 0
+            return self._streaming_scan(target_dir, recursive, extensions)
+
+        # 预统计文件总数 → 让进度条能从 0 连贯走到 100（小目录够快）
         count = self._count_target_files(target_dir, recursive, extensions)
         if _is_sub_scan:
             self.stats.total_files += count
@@ -842,8 +874,65 @@ class AntivirusScanner:
         self.stats.end_time = datetime.datetime.now().timestamp()
         return self._results
 
+    # ----------------------------------------------------------
+    # 流式扫描 — 单次遍历 + 即时进度（全盘扫描专用）
+    # ----------------------------------------------------------
+    def _streaming_scan(
+        self,
+        target_dir: str,
+        recursive: bool = True,
+        extensions: Optional[list[str]] = None,
+    ) -> list[ScanResult]:
+        """流式扫描：os.walk 单次遍历，每发现一个文件 → total_files++ → 立即扫描。
+        保证第一个文件就能在 UI 上看到进度跳动，不会出现"已扫描: 0"的假死现象。"""
+        try:
+            if recursive:
+                for root, dirs, filenames in os.walk(target_dir):
+                    if self._cancel_flag.is_set():
+                        break
+                    # 跳过系统目录 / 隐藏目录
+                    dirs[:] = [
+                        d for d in dirs
+                        if not self._should_skip_dir(os.path.join(root, d))
+                    ]
+                    for fname in filenames:
+                        if self._cancel_flag.is_set():
+                            break
+                        fpath = os.path.join(root, fname)
+                        if extensions:
+                            ext = Path(fname).suffix.lower()
+                            if ext not in extensions:
+                                continue
+                        # 先把文件计入总数（进度条分子/分母同时增长）
+                        self.stats.total_files += 1
+                        try:
+                            self._scan_one_file(fpath)
+                        except ScanCancelled:
+                            break
+                    if self._cancel_flag.is_set():
+                        break
+            else:
+                for entry in Path(target_dir).iterdir():
+                    if self._cancel_flag.is_set():
+                        break
+                    if entry.is_file():
+                        if extensions:
+                            if entry.suffix.lower() not in extensions:
+                                continue
+                        self.stats.total_files += 1
+                        try:
+                            self._scan_one_file(str(entry))
+                        except ScanCancelled:
+                            break
+        except (PermissionError, OSError):
+            pass
+
+        self.stats.end_time = datetime.datetime.now().timestamp()
+        return self._results
+
     def _scan_one_file(self, fpath: str):
         """扫描单个文件并更新统计/回调"""
+        self.stats.current_file = fpath  # ESET 风格：记录当前扫描文件
         result = self.scan_file(fpath, should_cancel=self._cancel_flag.is_set)
         self.stats.scanned_files += 1
 
@@ -889,26 +978,29 @@ class AntivirusScanner:
     # 全盘扫描
     # ----------------------------------------------------------
     def full_scan(self) -> list[ScanResult]:
-        """全盘扫描 — 扫描所有磁盘驱动器，结果累积"""
+        """全盘扫描 — 流式模式，单次遍历边走边扫，第一个文件即有进度反馈"""
         self.reset()
         self.stats.start_time = datetime.datetime.now().timestamp()
 
         if os.name == "nt":
-            # Windows: 扫描所有可用磁盘
+            # Windows: 扫描所有可用磁盘（全部流式模式）
             import string
             drives = []
             for letter in string.ascii_uppercase:
                 drive = f"{letter}:\\"
                 if os.path.exists(drive):
                     drives.append(drive)
-            # 第一个盘符正常扫描 (已 reset)，后续标记为子扫描
+            # 第一个盘符正常扫描（已 reset），后续标记为子扫描
             for i, drive in enumerate(drives):
                 if self._cancel_flag.is_set():
                     break
-                self.scan_directory(drive, recursive=True, _is_sub_scan=(i > 0))
+                self.scan_directory(
+                    drive, recursive=True,
+                    _is_sub_scan=(i > 0), _streaming=True,
+                )
         else:
             # Linux/macOS: 从根目录扫描
-            self.scan_directory("/", recursive=True, _is_sub_scan=True)
+            self.scan_directory("/", recursive=True, _is_sub_scan=True, _streaming=True)
 
         self.stats.end_time = datetime.datetime.now().timestamp()
         return self._results
@@ -999,7 +1091,7 @@ class QuarantineManager:
                 "quarantined_at": datetime.datetime.now().isoformat(),
             }
             self._save_index()
-            return True
+            return q_name
 
         except Exception as e:
             print(f"[!] 隔离失败: {e}")
