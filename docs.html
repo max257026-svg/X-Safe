@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>X-Safe 开发文档 — 架构 · 打包 · 版本历史</title>
+<meta name="description" content="X-Safe 安全中心开发者文档：模块架构、关键流程、线程模型、PyInstaller 打包指南与更新日志。">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="assets/xsafe-icon.png" type="image/png">
+</head>
+<body>
+
+<!-- 导航 -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="index.html">
+      <span class="logo"><img src="assets/xsafe-icon.png" alt="X-Safe" width="22" height="22"></span>
+      X-Safe
+    </a>
+    <div class="nav-links">
+      <a href="index.html">项目主页</a>
+      <a href="docs.html">开发文档</a>
+      <a href="https://github.com/max257026-svg/X-Safe/releases">下载</a>
+    </div>
+    <div class="nav-spacer"></div>
+    <a class="btn btn-light" href="index.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-6 9 6v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M9 21V12h6v9"/></svg>
+      项目主页
+    </a>
+    <a class="btn btn-primary" href="https://github.com/max257026-svg/X-Safe">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.58 2 12.25c0 4.53 2.87 8.37 6.84 9.73.5.1.68-.22.68-.49v-1.7c-2.78.62-3.37-1.36-3.37-1.36-.46-1.18-1.11-1.49-1.11-1.49-.9-.63.07-.62.07-.62 1 .07 1.53 1.05 1.53 1.05.9 1.57 2.36 1.12 2.94.86.09-.66.35-1.12.63-1.38-2.22-.26-4.55-1.14-4.55-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.7 0 0 .84-.28 2.75 1.05a9.3 9.3 0 0 1 5 0c1.91-1.33 2.75-1.05 2.75-1.05.55 1.4.2 2.44.1 2.7.64.72 1.03 1.63 1.03 2.75 0 3.94-2.34 4.8-4.57 5.06.36.32.68.94.68 1.9v2.82c0 .27.18.6.69.49A10.26 10.26 0 0 0 22 12.25C22 6.58 17.52 2 12 2z"/></svg>
+      GitHub
+    </a>
+  </div>
+</nav>
+
+<div class="doc-shell">
+  <!-- 侧边栏 -->
+  <aside class="sidebar">
+    <div class="s-group">
+      <div class="s-title">入门</div>
+      <a href="#intro">项目简介</a>
+      <a href="#quickstart">快速开始</a>
+    </div>
+    <div class="s-group">
+      <div class="s-title">架构设计</div>
+      <a href="#modules">模块依赖图</a>
+      <a href="#flows">关键流程</a>
+      <a href="#threads">线程模型</a>
+      <a href="#decisions">关键设计决策</a>
+      <a href="#perf">性能指标</a>
+      <a href="#debug">调试工具</a>
+    </div>
+    <div class="s-group">
+      <div class="s-title">打包指南</div>
+      <a href="#build">快速打包</a>
+      <a href="#spec">main.spec 配置</a>
+      <a href="#faq">常见问题</a>
+      <a href="#checklist">发布前检查清单</a>
+    </div>
+    <div class="s-group">
+      <div class="s-title">版本</div>
+      <a href="#changelog">更新日志</a>
+    </div>
+  </aside>
+
+  <!-- 内容 -->
+  <main class="doc-content">
+    <h1>X-Safe 开发文档</h1>
+    <p class="doc-sub">面向开发者与维护者：模块架构、关键流程、PyInstaller 打包与版本历史。</p>
+
+    <h2 id="intro">项目简介</h2>
+    <p>
+      <strong>X-Safe 安全中心</strong> 是 Windows 上的主动防御型杀毒软件，
+      核心思路是「先弹窗、再处置」——特征查杀、AI 行为评分、云端联动和系统敏感点监控都在一个中文界面里。
+    </p>
+    <p>技术栈：Python 3.13+ · tkinter GUI · watchdog 文件监控 · pystray 系统托盘 · 纯标准库 + 少量 pip 依赖，可经 PyInstaller 打包为单目录 exe。</p>
+
+    <h2 id="quickstart">快速开始</h2>
+    <h3>从源码运行</h3>
+    <pre><code>git clone https://github.com/max257026-svg/X-Safe.git
+cd X-Safe
+python -m venv .venv
+.venv\Scripts\activate        # Windows
+pip install -r requirements.txt
+python main.py</code></pre>
+    <h3>从源码打包成 exe</h3>
+    <pre><code>pip install pyinstaller
+rm -rf build/ dist/           # 必须清缓存，否则可能用旧代码
+pyinstaller main.spec --noconfirm --clean</code></pre>
+    <div class="callout warn">PyInstaller 缓存陷阱：每次改完代码后必须 <code>rm -rf build/ dist/</code>，否则可能用旧代码打包。</div>
+
+    <h2 id="modules">模块依赖图</h2>
+    <p><code>main.py</code>（tkinter GUI 主程序，5000+ 行）作为入口，向下依赖 <code>src/</code> 中的各核心模块。</p>
+    <pre><code>                        ┌─────────────────┐
+                        │    main.py      │  (tkinter GUI 主程序)
+                        │  (5000+ 行)     │
+                        └────────┬────────┘
+                                 │
+        ┌────────────────────────┼────────────────────────┐
+        │                        │                        │
+        ▼                        ▼                        ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   src/engine.py │    │  src/ai_engine  │    │ src/cloud_engine │
+│  扫描引擎核心   │    │  AI 评分引擎     │    │  云端查杀        │
+│  + ScanResult   │    │  + AIScorer     │    │  + VirusTotal    │
+│  + 隔离区       │    │  + 学习数据库    │    │  + 360 云        │
+└────────┬────────┘    └─────────────────┘    └─────────────────┘
+        │
+        │ (主动防御子系统)
+        ├────────────────────────┐
+        ▼                        ▼
+┌─────────────────┐    ┌─────────────────┐
+│ src/monitor.py  │    │ src/registry_   │
+│ 文件系统监控    │    │   monitor.py    │
+│ (watchdog)      │    │ 注册表监控      │
+└─────────────────┘    └─────────────────┘
+        │
+        ▼
+┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+│ src/process_    │  │ src/boot_guard  │  │ src/whitelist    │
+│   monitor.py    │  │ 引导区保护      │  │ 白名单+自保护   │
+│ 进程行为监控    │  │ (MBR/VBR 哈希)  │  │                 │
+└─────────────────┘  └─────────────────┘  └─────────────────┘
+
+┌─────────────────┐  ┌─────────────────┐
+│ src/recovery.py │  │ src/self_check  │
+│ 勒索恢复        │  │ 自检程序        │
+│ WannaCry/EtB    │  │ (三引擎联动)    │
+└─────────────────┘  └─────────────────┘
+
+┌─────────────────────────────────────────┐
+│ src/toast_notification.py               │
+│ ThreatToast 弹窗系统 (主弹窗组件)       │
+└─────────────────────────────────────────┘</code></pre>
+
+    <h2 id="flows">关键流程</h2>
+    <h3>1. 快速扫描流程</h3>
+    <pre><code>用户点击「快速扫描」按钮
+  ↓
+_start_quick_scan()  (main.py)
+  ↓
+_start_scan_thread(scan_fn)  ── 启动后台线程
+  ↓
+scanner.quick_scan()  (engine.py)  ── 逐文件扫描
+  ↓
+self._on_scan_progress(result, stats)  ── 每次发现可疑
+  ↓
+self._scan_queue.put(("progress", result, stats))  ── 跨线程安全
+  ↓
+主线程 _process_scan_queue()  ── 30ms 轮询
+  ↓
+_dispatch_scan_event("progress") → _update_scan_ui(...)
+  ↓
+if result.is_threat:  _add_result_to_tree / _show_threat_toast
+  ↓
+_show_scan_summary_toast(result)  ── 累积摘要弹窗（1.5s 节流）
+  ↓
+ThreatToast 弹窗（屏幕右下方）</code></pre>
+
+    <h3>2. 实时防护触发流程</h3>
+    <pre><code>watchdog 检测到文件创建/修改/移动
+  ↓
+FileMonitor._on_modified(event)  (monitor.py, 子线程)
+  ↓
+判断路径是否值得关注
+  ↓
+scanner.scan_file(file_path)  ── 同步扫描单个文件
+  ↓
+OnThreatDetectedCallback(result)  (main.py)
+  ↓
+self._scan_queue.put(("threat", result))  ── 跨线程
+  ↓
+主线程 _process_scan_queue() → _show_threat_toast  (每个威胁一个)</code></pre>
+
+    <h3>3. ThreatToast 弹窗系统</h3>
+    <p><strong>累积摘要弹窗</strong>（手动扫描时使用，避免 500+ 弹窗被 max_toasts 顶掉）：</p>
+    <pre><code>def _show_scan_summary_toast(self, result):
+    self._scan_acc_count += 1
+    self._scan_acc_samples.append(result)
+    if now - self._last_scan_summary_toast_ts < 1500:
+        return  # 仅累积，不弹
+    self._toast_manager.clear_all()
+    config = ToastConfig(
+        title=f"扫描发现 {count} 个威胁",
+        details="前几个样本...",
+        auto_dismiss=0,
+    )
+    self._toast_manager.show_toast(config)</code></pre>
+    <p><strong>单条带按钮弹窗</strong>（实时监控时使用，每个威胁一个，带删除/自检/忽略回调）。</p>
+
+    <h3>4. 数据流向</h3>
+    <pre><code>exe 启动 → _get_data_dir()  ── %TEMP%\XSafe\ (Windows) / ./.userdata/ (源码)
+  ↓
+_ensure_seeded_files()  ── 首次启动把 bundled 数据拷过去
+  ↓
+self.ai_learning_db, self.quarantine, ...
+  ↓
+运行时读写</code></pre>
+
+    <h2 id="threads">线程模型</h2>
+    <table>
+      <thead><tr><th>线程</th><th>职责</th><th>创建位置</th></tr></thead>
+      <tbody>
+        <tr><td>主线程 (Tk)</td><td>UI 渲染 + 30ms 轮询 <code>_process_scan_queue</code></td><td>tkinter</td></tr>
+        <tr><td>扫描线程</td><td>快速/高级/自定义扫描，逐文件调 <code>_on_scan_progress</code></td><td><code>_start_scan_thread</code></td></tr>
+        <tr><td>文件系统监控线程</td><td>watchdog 监听（每个路径一个 Observer）</td><td><code>monitor.py:FileMonitor.start</code></td></tr>
+        <tr><td>注册表监控线程</td><td>轮询关键项变化</td><td><code>registry_monitor.py:RegistryMonitor.start</code></td></tr>
+        <tr><td>进程监控线程</td><td>轮询进程启动/退出</td><td><code>process_monitor.py:ProcessMonitor.start</code></td></tr>
+        <tr><td>UI 轮询线程 (after)</td><td>1000ms 检查 result_tree 新增行</td><td><code>self.root.after(1000, ...)</code></td></tr>
+      </tbody>
+    </table>
+    <h3>跨线程通信</h3>
+    <ul>
+      <li><strong>扫描线程 → 主线程</strong>：<code>_scan_queue: queue.Queue</code>（先进先出）</li>
+      <li><strong>监控线程 → 主线程</strong>：通过 <code>_scan_queue</code> 推 <code>("threat", result)</code> 事件</li>
+      <li><strong>主线程 → 子线程</strong>：无；扫描取消通过 <code>threading.Event</code></li>
+    </ul>
+    <div class="callout">关键原则：任何 UI 操作必须在主线程；任何 tkinter 变量读取必须在主线程；后台线程绝不能调用 tkinter API（否则报 <code>main thread is not in main loop</code>）。</div>
+
+    <h2 id="decisions">关键设计决策</h2>
+    <h3>1. 累积摘要弹窗（手动扫描）</h3>
+    <p><strong>问题</strong>：快速扫描发现 500+ 威胁时，30ms 内创建 500+ ThreatToast，被 max_toasts=8 顶替后用户看不到。</p>
+    <p><strong>方案</strong>：手动扫描时只弹 1 个累积摘要（每 1.5s 更新一次），弹窗前 <code>clear_all()</code> 清空队列。</p>
+    <h3>2. 不自动隔离</h3>
+    <p><strong>问题</strong>：用户希望对威胁有最终决定权，自动隔离是过度保护。</p>
+    <p><strong>方案</strong>：检测到威胁 → 弹 ThreatToast → 用户选「删除/隔离/自检/忽略」。</p>
+    <h3>3. 自保护白名单</h3>
+    <p><strong>问题</strong>：PyInstaller 打包的 <code>_internal</code> 目录被扫描器误报，导致程序无法运行。</p>
+    <p><strong>方案</strong>：<code>WhitelistEngine.is_self_protected(path)</code> 检查 <code>sys.executable</code> 和 <code>_internal</code> 目录，默认豁免。</p>
+    <h3>4. 数据目录在 %TEMP%</h3>
+    <p><strong>问题</strong>：%APPDATA% 在公司/家庭策略下可能被静默重定向到 exe 同目录。</p>
+    <p><strong>方案</strong>：用 %TEMP% 替代 %APPDATA%，跨用户稳定可写，不受策略限制。</p>
+    <h3>5. after 链不断裂</h3>
+    <p><strong>问题</strong>：<code>self.root.after(1000, self.method)</code> 传 bound method，Tk 注册成临时 command，GC 后失效。</p>
+    <p><strong>方案</strong>：用 <code>_poll_tick_wrapper()</code> 包装函数 + <code>lambda: self._poll_tick_wrapper()</code> 保引用。</p>
+
+    <h2 id="perf">性能指标</h2>
+    <table>
+      <thead><tr><th>操作</th><th>时间</th><th>备注</th></tr></thead>
+      <tbody>
+        <tr><td>快速扫描（500 文件）</td><td>1–2 秒</td><td>取决于磁盘 I/O</td></tr>
+        <tr><td>AI 评分（单文件）</td><td>5–10 ms</td><td>纯 Python，无外部依赖</td></tr>
+        <tr><td>云查杀（单文件）</td><td>200–500 ms</td><td>受网络影响</td></tr>
+        <tr><td>ThreatToast 弹窗延迟</td><td>&lt; 50 ms</td><td>tkinter 创建 Toplevel</td></tr>
+        <tr><td>累积摘要弹窗节流</td><td>1.5 s</td><td>避免狂涌时弹窗叠加</td></tr>
+        <tr><td>实时监控事件处理</td><td>&lt; 100 ms</td><td>watchdog + 队列</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="debug">调试工具</h2>
+    <table>
+      <thead><tr><th>工具</th><th>路径</th><th>用途</th></tr></thead>
+      <tbody>
+        <tr><td>init_debug.log</td><td>exe 同目录 / 源码根</td><td>启动流程 6 个关键步骤打点</td></tr>
+        <tr><td>poll_debug.log</td><td><code>%TEMP%\XSafe\</code></td><td>轮询器心跳 + 弹窗触发记录</td></tr>
+        <tr><td>XSAFE_DEBUG_TOAST=1</td><td>环境变量</td><td>启动 5s 后自动触发一个 ThreatToast</td></tr>
+        <tr><td>XSAFE_AUTO_SCAN=1</td><td>环境变量</td><td>启动 3s 后自动触发快速扫描</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="build">快速打包</h2>
+    <pre><code># 1. 清理旧 build（必须！PyInstaller --clean 不会清 build/ 目录）
+rm -rf build/ dist/
+
+# 2. 打包
+pyinstaller main.spec --noconfirm --clean
+
+# 3. 输出位置
+# dist/XSafe/XSafe.exe        — 主程序
+# dist/XSafe/_internal/        — 依赖库
+# dist/XSafe/signatures.json   — 病毒签名
+# dist/XSafe/xsafe.ico         — 图标</code></pre>
+
+    <h2 id="spec">main.spec 配置</h2>
+    <p><code>main.spec</code> 是 PyInstaller 的打包配置：</p>
+    <pre><code>datas = [
+    ('signatures.json', '.'),    # 病毒签名
+    ('ai_learning.db', '.'),     # AI 学习数据库种子
+    ('theme_config.json', '.'),  # 主题配置
+    ('cloud_cache.json', '.'),   # 云查杀缓存
+    ('cloud_config.json', '.'),   # 云查杀配置
+    ('hosts_backup.txt', '.'),   # hosts 备份
+    ('xsafe.ico', '.'),          # 应用图标
+    ('quarantine', 'quarantine'),# 隔离区
+]
+
+hiddenimports = [
+    'watchdog', 'pystray', 'PIL',
+    'self_check', 'boot_guard',
+    'registry_monitor', 'winreg',
+    # ... 等
+]</code></pre>
+
+    <h2 id="faq">常见问题</h2>
+    <h3>Q1: 打包后启动报 "ModuleNotFoundError: No module named 'xyz'"</h3>
+    <p><strong>原因</strong>：模块没在 <code>hiddenimports</code> 列表中。<br><strong>解决</strong>：把模块名加到 <code>main.spec</code> 的 <code>hiddenimports</code>，重新打包。</p>
+    <h3>Q2: 启动后报 "database is locked"</h3>
+    <p><strong>原因</strong>：exe 模式的数据目录是 <code>_internal/.userdata</code> 而非 <code>%TEMP%\XSafe</code>。<br><strong>解决</strong>：确认 <code>_get_data_dir()</code> 用了 <code>sys.frozen</code>（不是 <code>sys._frozen</code>），并确认打包时带上了 <code>ai_learning.db</code>。</p>
+    <h3>Q3: ThreatToast 弹窗不显示</h3>
+    <p><strong>原因</strong>：① PyInstaller 用了 build 缓存（最常见）；② max_toasts 被狂涌覆盖；③ toast_manager 没初始化。<br><strong>解决</strong>：<code>rm -rf build/ dist/</code> 重新打包；手动扫描走累积摘要弹窗（v28 修复）；检查 <code>poll_debug.log</code>。</p>
+    <h3>Q4: 实时监控失效</h3>
+    <p><strong>原因</strong>：watchdog 子线程 join 卡 UI 线程。<br><strong>解决</strong>：后台 daemon 线程 + PollingObserver 兜底 + try/except 隔离失败路径。</p>
+
+    <h2 id="checklist">发布前检查清单</h2>
+    <ul>
+      <li><code>rm -rf build/ dist/</code> 后重新打包</li>
+      <li>验证 PYZ 缓存里有新代码（grep 关键字）</li>
+      <li>启动 exe，跑快速扫描，确认 ThreatToast 弹窗</li>
+      <li>检查 <code>%TEMP%\XSafe\poll_debug.log</code> 有心跳</li>
+      <li>启动实时防护，确认子模块复选框不崩</li>
+      <li>关于页显示正确（制作/出品/鸣谢）</li>
+      <li>主题切换正常工作</li>
+      <li>病毒扫描结果正常显示</li>
+      <li>隔离 / 恢复 / 删除功能正常</li>
+      <li>引导区基线建立正常</li>
+      <li>自检程序正常</li>
+      <li>勒索恢复工具正常</li>
+    </ul>
+
+    <h2 id="changelog">更新日志</h2>
+    <p>格式基于 <a href="https://keepachangelog.com/zh-CN/1.0.0/">Keep a Changelog</a>，版本号遵循 <a href="https://semver.org/lang/zh-CN/">语义化版本</a>。</p>
+    <h3>1.0.0 — 2026-07-18（首次发布）</h3>
+    <p>由竹影清风独立设计开发，新启年工作室联合出品。</p>
+    <h3>三引擎联动</h3>
+    <ul>
+      <li><strong>特征引擎</strong>：哈希签名（MD5/SHA256）+ 模式规则（regex）+ YARA 风格字符串匹配</li>
+      <li><strong>AI 自学习引擎</strong>：本地熵值、节区特征、API 调用序列综合评分，结合用户反馈持续学习</li>
+      <li><strong>云端查杀</strong>：360云 + VirusTotal 在线验证，群体判定与最新威胁标签</li>
+      <li><strong>统一 ConfidenceScore</strong>：三引擎结果按权重融合，给出最终风险等级</li>
+    </ul>
+    <h3>主动防御</h3>
+    <ul>
+      <li><strong>文件系统监控</strong>：watchdog（实时）+ PollingObserver（系统目录兜底）</li>
+      <li><strong>注册表监控</strong>：Run / IFEO / Winlogon Shell / AppInit_DLLs / Userinit 关键项</li>
+      <li><strong>引导区保护</strong>：MBR / VBR 哈希快照，发现篡改立即告警</li>
+      <li><strong>进程行为监控</strong>：异常父子进程、DLL 注入、批量加密写文件实时拦截</li>
+      <li><strong>系统敏感文件监控</strong>：hosts、计划任务、启动项、卷影副本、SAM</li>
+    </ul>
+    <h3>自检与恢复</h3>
+    <ul>
+      <li><strong>自检程序</strong>：隔离区完整性 + 引导区 + 注册表基线巡检</li>
+      <li><strong>勒索恢复</strong>：WannaCry / EternalBlue 痕迹检测 + 卷影副本恢复</li>
+      <li><strong>隔离区</strong>：处置后样本落入可恢复隔离沙箱，误杀可一键还原</li>
+    </ul>
+    <h3>ThreatToast 弹窗系统</h3>
+    <ul>
+      <li>屏幕右下方 420×340 无边框弹窗</li>
+      <li><strong>累积摘要弹窗</strong>（手动扫描）：狂涌 500+ 威胁时每 1.5s 弹 1 个</li>
+      <li><strong>单条带按钮</strong>（实时监控）：删除 / 自检 / 忽略</li>
+      <li><strong>不自动隔离</strong>——用户在弹窗里决定如何处置</li>
+    </ul>
+    <h3>UI 设计</h3>
+    <ul>
+      <li>浅 / 深双主题，一键切换</li>
+      <li>左侧直角导航栏 + 大色块按钮</li>
+      <li>实时防护独立板块（6 子模块开关）</li>
+      <li>扫描结果区支持全选/单选/删除/隔离/信任/导出</li>
+      <li>关于页含制作/出品/鸣谢信息</li>
+    </ul>
+    <h3>已知限制</h3>
+    <ul>
+      <li>仅支持 Windows 10/11</li>
+      <li>云查杀需要联网（可关闭）</li>
+      <li>部分核心 API 依赖管理员权限（HKLM 启动项、引导区）</li>
+    </ul>
+  </main>
+</div>
+
+<!-- 页脚 -->
+<footer class="footer">
+  <div class="wrap">
+    <div>
+      <div class="f-brand">
+        <span class="logo"><img src="assets/xsafe-icon.png" alt="X-Safe" width="22" height="22"></span>
+        X-Safe
+      </div>
+      <p class="f-tag">Windows 主动防御型杀毒软件 · 特征查杀 · AI 评分 · 实时监控</p>
+    </div>
+    <div class="f-links">
+      <div class="f-col">
+        <h4>项目</h4>
+        <a href="index.html">项目主页</a>
+        <a href="docs.html">开发文档</a>
+        <a href="https://github.com/max257026-svg/X-Safe/releases">下载</a>
+      </div>
+      <div class="f-col">
+        <h4>社区</h4>
+        <a href="https://github.com/max257026-svg/X-Safe/issues">问题反馈</a>
+        <a href="https://github.com/max257026-svg/X-Safe">GitHub 仓库</a>
+      </div>
+    </div>
+  </div>
+  <div class="f-bottom">
+    X-Safe 安全中心 · MIT License · 由竹影清风独立设计开发，新启年工作室联合出品
+  </div>
+</footer>
+
+<script>
+// 侧边栏滚动高亮
+const links = Array.from(document.querySelectorAll('.sidebar a'));
+const map = new Map();
+links.forEach(a => {
+  const id = a.getAttribute('href').slice(1);
+  const el = document.getElementById(id);
+  if (el) map.set(el, a);
+});
+const obs = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const a = map.get(e.target);
+      if (a) a.classList.add('active');
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px', threshold: 0 });
+map.forEach((a, el) => obs.observe(el));
+</script>
+
+</body>
+</html>

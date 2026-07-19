@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>X-Safe 安全中心 — Windows 主动防御型杀毒软件</title>
+<meta name="description" content="X-Safe 安全中心：Windows 主动防御杀毒软件。特征查杀、AI 行为评分、云端联动，文件/注册表/引导区/进程实时监控。">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="assets/xsafe-icon.png" type="image/png">
+</head>
+<body>
+
+<!-- 导航 -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="index.html">
+      <span class="logo"><img src="assets/xsafe-icon.png" alt="X-Safe" width="22" height="22"></span>
+      X-Safe
+    </a>
+    <div class="nav-links">
+      <a href="index.html">项目主页</a>
+      <a href="docs.html">开发文档</a>
+      <a href="https://github.com/max257026-svg/X-Safe/releases">下载</a>
+    </div>
+    <div class="nav-spacer"></div>
+    <a class="btn btn-light" href="docs.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h11l5 5v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M14 4v5h5"/></svg>
+      开发文档
+    </a>
+    <a class="btn btn-primary" href="https://github.com/max257026-svg/X-Safe">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.58 2 12.25c0 4.53 2.87 8.37 6.84 9.73.5.1.68-.22.68-.49v-1.7c-2.78.62-3.37-1.36-3.37-1.36-.46-1.18-1.11-1.49-1.11-1.49-.9-.63.07-.62.07-.62 1 .07 1.53 1.05 1.53 1.05.9 1.57 2.36 1.12 2.94.86.09-.66.35-1.12.63-1.38-2.22-.26-4.55-1.14-4.55-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.7 0 0 .84-.28 2.75 1.05a9.3 9.3 0 0 1 5 0c1.91-1.33 2.75-1.05 2.75-1.05.55 1.4.2 2.44.1 2.7.64.72 1.03 1.63 1.03 2.75 0 3.94-2.34 4.8-4.57 5.06.36.32.68.94.68 1.9v2.82c0 .27.18.6.69.49A10.26 10.26 0 0 0 22 12.25C22 6.58 17.52 2 12 2z"/></svg>
+      GitHub
+    </a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<header class="hero">
+  <div class="wrap">
+    <img src="assets/xsafe-icon.png" alt="X-Safe" class="hero-icon-img">
+    <span class="badge">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6l8-3z"/></svg>
+      主动防御型安全软件 · 支持 Windows 10/11
+    </span>
+    <h1>Windows 上的<span class="hl">主动防御杀软</span></h1>
+    <p class="lead">
+      X-Safe 把特征查杀、AI 行为评分、云端联动和系统敏感点监控放进一个中文界面里。
+      发现可疑先弹窗、由你决定怎么处理，不懂安全也能用。
+    </p>
+    <div class="hero-cta">
+      <a class="btn btn-primary" href="https://github.com/max257026-svg/X-Safe/releases">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+        下载最新版本
+      </a>
+      <a class="btn btn-ghost" href="docs.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h11l5 5v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M14 4v5h5"/></svg>
+        阅读开发文档
+      </a>
+    </div>
+    <div class="hero-meta">
+      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> MIT 开源许可</span>
+      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Python 3.13+</span>
+      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> 三引擎联动查杀</span>
+    </div>
+  </div>
+</header>
+
+<!-- 三引擎联动 -->
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">核心能力</div>
+      <h2>三引擎联动，按权重融合判定</h2>
+      <p>特征引擎、AI 自学习引擎与云端查杀各自独立评分，再由统一 ConfidenceScore 融合后给出危险等级。</p>
+    </div>
+    <div class="engines">
+      <div class="engine">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></div>
+        <span class="tag">特征引擎</span>
+        <h3>签名 + 模式匹配</h3>
+        <p>哈希签名（MD5/SHA256）叠加 regex 模式规则与 YARA 风格字符串匹配，覆盖已知威胁家族。</p>
+      </div>
+      <div class="engine">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a4 4 0 0 0-4 4 4 4 0 0 0-1 7.9V18h10v-3.1A4 4 0 0 0 16 7a4 4 0 0 0-4-4z"/><path d="M12 7v5M9.5 9.5h5"/></svg></div>
+        <span class="tag">AI 自学习引擎</span>
+        <h3>行为评分 + 持续学习</h3>
+        <p>综合本地熵值、节区特征与 API 调用序列评分，结合你的反馈不断学习，判定会更稳。</p>
+      </div>
+      <div class="engine">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19a4.5 4.5 0 0 0 .5-9 6 6 0 0 0-11.6 1.5A4 4 0 0 0 6 19h11.5z"/><path d="M12 12v6M9.5 14.5L12 12l2.5 2.5"/></svg></div>
+        <span class="tag">云端查杀（可选）</span>
+        <h3>360云 + VirusTotal</h3>
+        <p>在线验证群体判定与最新威胁标签，联网即可获得最新情报；无网时可一键关闭，纯本地运行。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 主动防御体系 -->
+<section class="section alt">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">主动防御</div>
+      <h2>系统敏感点，全程实时监控</h2>
+      <p>不只是扫描，更会在威胁发生时立刻拦下来：解压、下载、注册表、引导区、进程行为都会被盯住。</p>
+    </div>
+    <div class="grid grid-3">
+      <div class="card">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></div>
+        <h3>文件系统监控</h3>
+        <p>watchdog 实时监听，PollingObserver 对系统目录兜底，文件创建/修改/移动即刻扫描。</p>
+      </div>
+      <div class="card">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h12M8 12h12M8 18h12"/><path d="M4 6h.01M4 12h.01M4 18h.01"/></svg></div>
+        <h3>注册表监控</h3>
+        <p>盯紧 Run / IFEO / Winlogon Shell / AppInit_DLLs / Userinit 等关键自启与注入项。</p>
+      </div>
+      <div class="card">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18v5H3zM3 14h18v5H3z"/><path d="M7 7.5h.01M7 16.5h.01"/></svg></div>
+        <h3>引导区保护</h3>
+        <p>对 MBR / VBR 建立哈希快照，发现篡改立即告警，守住系统最底层。</p>
+      </div>
+      <div class="card">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2 6 4-12 2 6h6"/></svg></div>
+        <h3>进程行为监控</h3>
+        <p>识别异常父子进程、DLL 注入与批量加密写文件，勒索行为实时拦截。</p>
+      </div>
+      <div class="card">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/></svg></div>
+        <h3>系统敏感文件</h3>
+        <p>对 hosts、计划任务、启动项、卷影副本、SAM 等关键点持续巡检。</p>
+      </div>
+      <div class="card accent">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+        <h3>自保护白名单</h3>
+        <p>程序自身与 _internal 目录默认豁免，避免 PyInstaller 依赖被误报导致无法运行。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 更多核心特性 -->
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">更多能力</div>
+      <h2>自检、恢复与交互细节</h2>
+      <p>从防护自检到勒索恢复，再到弹窗提示，常见的防护能力都覆盖到了。</p>
+    </div>
+    <div class="grid grid-3">
+      <div class="card">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg></div>
+        <h3>系统自检</h3>
+        <p>隔离区完整性 + 引导区 + 注册表基线一键巡检，快速确认防护体系健康度。</p>
+      </div>
+      <div class="card">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg></div>
+        <h3>勒索恢复</h3>
+        <p>WannaCry / EternalBlue 痕迹检测 + 卷影副本恢复，针对性挽回被加密的文件。</p>
+      </div>
+      <div class="card">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9z"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></div>
+        <h3>ThreatToast 弹窗</h3>
+        <p>屏幕右下方累积摘要弹窗——狂涌 500+ 威胁也只弹 1 个，单条带删除/隔离/自检/忽略。</p>
+      </div>
+      <div class="card">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l6 3"/></svg></div>
+        <h3>浅 / 深双主题</h3>
+        <p>一键切换，通过 os.execv 重启进程换肤，长时间守屏也护眼。</p>
+      </div>
+      <div class="card">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg></div>
+        <h3>数据本地化</h3>
+        <p>所有用户数据落到 %TEMP%\XSafe\，跨会话存活，不受公司/家庭策略重定向影响。</p>
+      </div>
+      <div class="card accent">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <h3>不自动处置</h3>
+        <p>检测到威胁先弹窗，由你决定删除/隔离/自检/忽略，要不要处置、怎么处置，都由你决定。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 快速开始 -->
+<section class="section alt">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">快速开始</div>
+      <h2>三种方式，任选其一</h2>
+      <p>普通用户直接下 exe；开发者从源码运行或自行打包。</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="num">1</div>
+        <h3>下载预编译 exe</h3>
+        <div class="code"># 从 Releases 下载
+XSafe_v*.zip
+<span class="c"># 解压后双击 XSafe.exe 即可</span></div>
+        <div class="note">数据目录自动落在 <code>%TEMP%\XSafe\</code></div>
+      </div>
+      <div class="step">
+        <div class="num">2</div>
+        <h3>从源码运行</h3>
+        <div class="code"><span class="k">git clone</span> &lt;repo&gt;
+<span class="k">cd</span> X-Safe
+python -m venv .venv
+pip install -r requirements.txt
+<span class="k">python</span> main.py</div>
+      </div>
+      <div class="step">
+        <div class="num">3</div>
+        <h3>打包成 exe</h3>
+        <div class="code">pip install pyinstaller
+<span class="c"># 先清缓存，避免旧代码</span>
+rm -rf build/ dist/
+pyinstaller main.spec <span class="s">--noconfirm</span> <span class="s">--clean</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 鸣谢 -->
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">鸣谢</div>
+      <h2>制作与鸣谢</h2>
+    </div>
+    <div class="credits">
+      <div class="credit"><div class="role">制作</div><div class="name">竹影清风</div></div>
+      <div class="credit"><div class="role">出品</div><div class="name">新启年工作室</div></div>
+      <div class="credit"><div class="role">鸣谢</div><div class="name">WinDF · 老干白 · 小青墨 · 不言而喻</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 页脚 -->
+<footer class="footer">
+  <div class="wrap">
+    <div>
+      <div class="f-brand">
+        <span class="logo"><img src="assets/xsafe-icon.png" alt="X-Safe" width="22" height="22"></span>
+        X-Safe
+      </div>
+      <p class="f-tag">Windows 主动防御型杀毒软件 · 特征查杀 · AI 评分 · 实时监控</p>
+    </div>
+    <div class="f-links">
+      <div class="f-col">
+        <h4>项目</h4>
+        <a href="index.html">项目主页</a>
+        <a href="docs.html">开发文档</a>
+        <a href="https://github.com/max257026-svg/X-Safe/releases">下载</a>
+      </div>
+      <div class="f-col">
+        <h4>社区</h4>
+        <a href="https://github.com/max257026-svg/X-Safe/issues">问题反馈</a>
+        <a href="https://github.com/max257026-svg/X-Safe">GitHub 仓库</a>
+      </div>
+    </div>
+  </div>
+  <div class="f-bottom">
+    X-Safe 安全中心 · MIT License · 由竹影清风独立设计开发，新启年工作室联合出品
+  </div>
+</footer>
+
+</body>
+</html>
