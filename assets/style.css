@@ -64,12 +64,11 @@ a { color: inherit; text-decoration: none; }
 }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; }
 .brand .logo {
-  width: 34px; height: 34px;
+  width: 32px; height: 32px;
   display: grid; place-items: center;
-  background: var(--primary);
-  border-radius: 10px;
-  color: #fff;
-  box-shadow: 0 4px 12px rgba(15, 157, 88, .35);
+  background: transparent;
+  border-radius: 8px;
+  color: var(--primary);
 }
 .brand .logo svg { width: 20px; height: 20px; }
 .nav-links { display: flex; gap: 22px; margin-left: 8px; }
@@ -101,8 +100,8 @@ a { color: inherit; text-decoration: none; }
 }
 .hero-icon-img {
   width: 88px; height: 88px;
-  margin-bottom: 20px;
-  filter: drop-shadow(0 4px 16px rgba(109,93,251,.2));
+  display: block; margin: 0 auto 20px;
+  filter: drop-shadow(0 6px 18px rgba(15,157,88,.22));
 }
 .hero .badge {
   display: inline-flex; align-items: center; gap: 7px;
@@ -162,7 +161,7 @@ a { color: inherit; text-decoration: none; }
   box-shadow: var(--shadow-sm);
   transition: transform .16s, box-shadow .16s, border-color .16s;
 }
-.card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: #d8daf0; }
+.card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: #cbe9d8; }
 .card .icon {
   width: 46px; height: 46px;
   display: grid; place-items: center;
@@ -180,7 +179,7 @@ a { color: inherit; text-decoration: none; }
 .engines { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
 .engine {
   position: relative;
-  background: linear-gradient(180deg, #fff, #fbfaff);
+  background: linear-gradient(180deg, #fff, #f2fbf6);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 28px 24px;
@@ -190,7 +189,7 @@ a { color: inherit; text-decoration: none; }
 .engine::before {
   content: "";
   position: absolute; inset: 0 0 auto 0; height: 4px;
-  background: linear-gradient(90deg, var(--primary), #9b8cff);
+  background: linear-gradient(90deg, var(--primary), #54d99a);
 }
 .engine .icon {
   width: 48px; height: 48px; border-radius: 13px;
@@ -251,7 +250,7 @@ a { color: inherit; text-decoration: none; }
 }
 .footer .wrap { display: flex; flex-wrap: wrap; gap: 24px; justify-content: space-between; align-items: flex-start; }
 .footer .f-brand { display: flex; align-items: center; gap: 10px; color: #fff; font-weight: 700; font-size: 17px; }
-.footer .f-brand .logo { width: 32px; height: 32px; border-radius: 9px; background: var(--primary); display: grid; place-items: center; }
+.footer .f-brand .logo { width: 32px; height: 32px; border-radius: 9px; background: transparent; display: grid; place-items: center; }
 .footer .f-brand .logo svg { width: 18px; height: 18px; color: #fff; }
 .footer .f-tag { font-size: 13.5px; margin-top: 10px; max-width: 280px; color: #8a93a2; }
 .footer .f-links { display: flex; gap: 44px; flex-wrap: wrap; }
